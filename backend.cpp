@@ -26,6 +26,11 @@ BackEnd::BackEnd(QObject *parent) : QObject(parent)
     }
 
     modbus_status_ok = 0;
+
+    dio_status[0] = 0;
+    dio_status[1] = 0;
+    dio_status[2] = 0;
+    dio_status[3] = 0;
 }
 
 void BackEnd::_setEthStatus(int status_ok)
@@ -277,7 +282,7 @@ int BackEnd::_runEEPROMTest(void)
 
 int BackEnd::_runRTCTest(void)
 {
-    int ret = system("hwclock -s");
+    int ret = system("hwclock");
 
     if (ret != 0 && rtc_status_ok == 1) {
         rtc_status_ok = 0;
@@ -295,9 +300,124 @@ void * BackEnd::runRs485Loop(void *)
 {
     while(1) {
         _runModbusTest();
-        usleep(1000000);
+        //usleep(1000000);
+        sleep(1);
     }
 }
+
+void BackEnd::_emitDigitalIOStatusChanged(int io_idx)
+{
+    switch(io_idx) {
+    case 0:
+        emit dio1StatusChanged();
+        break;
+    case 1:
+        emit dio2StatusChanged();
+        break;
+    case 2:
+        emit dio3StatusChanged();
+        break;
+    case 3:
+        emit dio4StatusChanged();
+        break;
+    default:
+        break;
+    }
+}
+
+int BackEnd::_runDigitalIOTest(void)
+{
+    const char *io_paths[] = {
+        "/digital_ios/din1/value",
+        "/digital_ios/din2/value",
+        "/digital_ios/dout3/value",
+        "/digital_ios/dout4/value",
+    };
+    char buf[64];
+    int i, n;
+
+    for (i = 0; i < 4; i++) {
+        int fd = open(io_paths[i], O_RDWR);
+
+        if (fd < 0) {
+            dio_status[i] = 0;
+            continue;
+        }
+
+        n = read(fd, buf, sizeof(buf));
+        close(fd);
+
+        if (!strncmp(buf, "1", 1) && !dio_status[i]) {
+            dio_status[i] = 1;
+            _emitDigitalIOStatusChanged(i);
+        } else if (!strncmp(buf, "0", 1) && dio_status[i]) {
+            dio_status[i] = 0;
+            _emitDigitalIOStatusChanged(i);
+        }
+    }
+
+    return 0;
+}
+
+void BackEnd::_emitAnalogInStatusChanged(int io_idx)
+{
+    switch(io_idx) {
+    case 0:
+        emit ain1StatusChanged();
+        break;
+    case 1:
+        emit ain2StatusChanged();
+        break;
+    case 2:
+        emit ain3StatusChanged();
+        break;
+    case 3:
+        emit ain4StatusChanged();
+        break;
+    default:
+        break;
+    }
+}
+
+
+int BackEnd::_runAnalogInTest(void)
+{
+    const char *ain_paths[] = {
+        "/analog_ios/ain1/input",
+        "/analog_ios/ain2/input",
+        "/analog_ios/ain3/input",
+        "/analog_ios/ain4/input",
+    };
+
+    char buf[64];
+    int i, n;
+    int val;
+
+    for (i = 0; i < 4; i++) {
+        int fd = open(ain_paths[i], O_RDONLY);
+
+        if (fd < 0) {
+            ain_status[i] = 0;
+            continue;
+        }
+
+        n = read(fd, buf, sizeof(buf));
+        close(fd);
+
+        if (n > 0)
+            val = atoi(buf);
+        else
+            val = 0;
+
+        if (val != ain_status[i]) {
+            ain_status[i] = val;
+            _emitAnalogInStatusChanged(i);
+        }
+    }
+
+    return 0;
+}
+
 
 void * BackEnd::runDiagLoop(void *)
 {
@@ -308,7 +428,10 @@ void * BackEnd::runDiagLoop(void *)
         _runEthTest();
         _runRTCTest();
         _runEEPROMTest();
-        usleep(200000);
+        _runDigitalIOTest();
+        _runAnalogInTest();
+        //usleep(1000000);
+        sleep(1);
     }
 }
 
@@ -382,4 +505,63 @@ QString BackEnd::eeprom2StatusGet()
     } else {
         return "FAILURE";
     }
+}
+
+/* Digital I/O */
+QString BackEnd::dio1StatusGet()
+{
+    return dio_status[0] ? "1" : "0";
+
+}
+
+QString BackEnd::dio2StatusGet()
+{
+    return dio_status[1] ? "1" : "0";
+
+}
+
+QString BackEnd::dio3StatusGet()
+{
+    return dio_status[2] ? "1" : "0";
+
+}
+
+QString BackEnd::dio4StatusGet()
+{
+    return dio_status[3] ? "1" : "0";
+}
+
+
+/* Analog Outputs */
+QString BackEnd::aout1StatusGet()
+{
+    return QString::number(aout_status[0]);
+}
+
+QString BackEnd::aout2StatusGet()
+{
+     return QString::number(aout_status[1]);
+}
+
+
+/* Analog Inputs */
+QString BackEnd::ain1StatusGet()
+{
+    return QString::number(ain_status[0]);
+}
+
+QString BackEnd::ain2StatusGet()
+{
+    return QString::number(ain_status[1]);
+
+}
+
+QString BackEnd::ain3StatusGet()
+{
+    return QString::number(ain_status[2]);
+}
+
+QString BackEnd::ain4StatusGet()
+{
+    return QString::number(ain_status[3]);
 }
