@@ -15,6 +15,10 @@ typedef void * (*THREADFUNCPTR)(void *);
 
 BackEnd::BackEnd(QObject *parent) : QObject(parent)
 {
+    system("/usr/sbin/config_digital_ios.sh");
+    system("/usr/sbin/config_analog_inputs.sh");
+    system("/usr/sbin/config_analog_outputs.sh");
+
     int err = pthread_create(&hwdiag_thread, NULL, (THREADFUNCPTR) &BackEnd::runDiagLoop, this);
     if (err) {
         std::cout << "Thread creation failed : " << strerror(err);
@@ -282,15 +286,31 @@ int BackEnd::_runEEPROMTest(void)
 
 int BackEnd::_runRTCTest(void)
 {
-    int ret = system("hwclock");
+    int ret = system("hwclock -s");
 
+//    if (ret != 0 && rtc_status_ok == 1) {
+//        rtc_status_ok = 0;
+//        emit rtcStatusChanged();
+//    } else if (ret == 0 && rtc_status_ok == 0) {
+//        rtc_status_ok = 1;
+//        emit rtcStatusChanged();
+//    }
+
+    FILE *fp = popen("date  +\"%H:%M:%S %d/%m/%y\"", "r");
+    char buf[128];
+
+    if (fp == NULL)
+        ret = -1;
+
+    fread(buf, sizeof(buf), 1, fp);
+    rtc_date_str = QString(buf);
     if (ret != 0 && rtc_status_ok == 1) {
         rtc_status_ok = 0;
-        emit rtcStatusChanged();
     } else if (ret == 0 && rtc_status_ok == 0) {
         rtc_status_ok = 1;
-        emit rtcStatusChanged();
     }
+
+    emit rtcStatusChanged();
 
     return 0;
 }
@@ -418,6 +438,56 @@ int BackEnd::_runAnalogInTest(void)
     return 0;
 }
 
+void BackEnd::_emitAnalogOutStatusChanged(int io_idx)
+{
+    switch(io_idx) {
+    case 0:
+        emit aout1StatusChanged();
+        break;
+    case 1:
+        emit aout2StatusChanged();
+        break;
+    default:
+        break;
+    }
+}
+
+int BackEnd::_runAnalogOutTest(void)
+{
+    const char *aout_paths[] = {
+        "/analog_outputs/aout1/out_eng_units",
+        "/analog_outputs/aout2/out_eng_units",
+    };
+
+    char buf[64];
+    int i, n;
+    int val;
+
+    for (i = 0; i < 2; i++) {
+        int fd = open(aout_paths[i], O_RDONLY);
+
+        if (fd < 0) {
+            aout_status[i] = 0;
+            continue;
+        }
+
+        n = read(fd, buf, sizeof(buf));
+        close(fd);
+
+        if (n > 0)
+            val = atoi(buf);
+        else
+            val = 0;
+
+        if (val != aout_status[i]) {
+            aout_status[i] = val;
+            _emitAnalogOutStatusChanged(i);
+        }
+    }
+
+    return 0;
+}
+
 
 void * BackEnd::runDiagLoop(void *)
 {
@@ -430,6 +500,7 @@ void * BackEnd::runDiagLoop(void *)
         _runEEPROMTest();
         _runDigitalIOTest();
         _runAnalogInTest();
+        _runAnalogOutTest();
         //usleep(1000000);
         sleep(1);
     }
@@ -483,7 +554,7 @@ QString BackEnd::ethStatusGet()
 QString BackEnd::rtcStatusGet()
 {
     if (rtc_status_ok) {
-        return "OK";
+        return rtc_date_str.trimmed(); /* Remove newline */
     } else {
         return "FAILURE";
     }

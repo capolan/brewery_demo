@@ -5,6 +5,7 @@ Rectangle {
 
     property string status: "FAILURE"
     property string device: ""
+    property int textfontsize: 28
 
     width: 250
     height: 100
@@ -32,6 +33,7 @@ Rectangle {
         horizontalItemAlignment: Grid.AlignHCenter
 
         Text {
+            id: title
             color: "lightgrey"
             text: rect.device
             font.bold: true
@@ -39,9 +41,10 @@ Rectangle {
         }
 
         Text {
+            id: text
             color: "lightgrey"
             font.bold: true
-            font.pointSize: 28
+            font.pointSize: rect.textfontsize
             text: rect.status
         }
     }

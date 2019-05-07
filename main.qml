@@ -59,8 +59,14 @@ Window {
 //        }
 
         HwStatus {
+            id: rtcstat
             device: "RTC"
             status: backend.rtcStatus
+            onStatusChanged: {
+                if (rtcstat.status != "FAILURE")
+                    color = "green";
+            }
+            textfontsize: 18
         }
         HwStatus {
             device: "FM24CL"

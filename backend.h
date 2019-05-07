@@ -104,6 +104,8 @@ private:
     int aout_status[2];
     int ain_status[4];
 
+    QString rtc_date_str;
+
     int _runModbusTest();
     int _runUsbTest();
     int _runUsbOtgTest();
@@ -113,12 +115,14 @@ private:
     int _runRTCTest();
     int _runDigitalIOTest();
     int _runAnalogInTest();
+    int _runAnalogOutTest();
 
     void _setEthStatus(int);
     void _eeprom_set_status(int, int);
 
     void _emitDigitalIOStatusChanged(int);
     void _emitAnalogInStatusChanged(int);
+    void _emitAnalogOutStatusChanged(int);
 
 };
 
