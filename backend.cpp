@@ -288,14 +288,6 @@ int BackEnd::_runRTCTest(void)
 {
     int ret = system("hwclock -s");
 
-//    if (ret != 0 && rtc_status_ok == 1) {
-//        rtc_status_ok = 0;
-//        emit rtcStatusChanged();
-//    } else if (ret == 0 && rtc_status_ok == 0) {
-//        rtc_status_ok = 1;
-//        emit rtcStatusChanged();
-//    }
-
     FILE *fp = popen("date  +\"%H:%M:%S %d/%m/%y\"", "r");
     char buf[128];
 
@@ -303,7 +295,9 @@ int BackEnd::_runRTCTest(void)
         ret = -1;
 
     fread(buf, sizeof(buf), 1, fp);
-    rtc_date_str = QString(buf);
+    pclose(fp);
+    rtc_date_str = QString(buf).trimmed(); /* Save output as a QString */
+
     if (ret != 0 && rtc_status_ok == 1) {
         rtc_status_ok = 0;
     } else if (ret == 0 && rtc_status_ok == 0) {
@@ -320,7 +314,6 @@ void * BackEnd::runRs485Loop(void *)
 {
     while(1) {
         _runModbusTest();
-        //usleep(1000000);
         sleep(1);
     }
 }
@@ -501,7 +494,6 @@ void * BackEnd::runDiagLoop(void *)
         _runDigitalIOTest();
         _runAnalogInTest();
         _runAnalogOutTest();
-        //usleep(1000000);
         sleep(1);
     }
 }
@@ -554,7 +546,7 @@ QString BackEnd::ethStatusGet()
 QString BackEnd::rtcStatusGet()
 {
     if (rtc_status_ok) {
-        return rtc_date_str.trimmed(); /* Remove newline */
+        return rtc_date_str;
     } else {
         return "FAILURE";
     }
