@@ -17,6 +17,7 @@ echo 5000 > out_eng_units
 
 cd /analog_outputs/aout2
 echo 4-20mA > out_type
-echo 4000:200000 > current_calibration
-echo 20000:1000000 > current_calibration
+echo 4000:710000 > current_calibration
+echo 12000:471900 > current_calibration
+echo 20000:210000 > current_calibration
 echo 12000 > out_eng_units

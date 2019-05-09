@@ -77,8 +77,8 @@ echo 0 > deep_sleep
 echo 15 > type
 echo 0 > unit
 echo 1 > filter
-echo 0 > inll
-echo 10000 > inhl
+echo 4000 > inll
+echo 20000 > inhl
 echo 6 > window_size
 echo 36 > period_samples
 echo 1 > mains_freq
