@@ -15,6 +15,7 @@ typedef void * (*THREADFUNCPTR)(void *);
 
 BackEnd::BackEnd(QObject *parent) : QObject(parent)
 {
+    system("ifconfig eth0:1 192.168.0.101");
     system("/usr/sbin/config_digital_ios.sh");
     system("/usr/sbin/config_analog_inputs.sh");
     system("/usr/sbin/config_analog_outputs.sh");
@@ -575,6 +576,50 @@ QString BackEnd::dio1StatusGet()
 {
     return dio_status[0] ? "1" : "0";
 
+}
+
+void BackEnd::dioStatusSet(int io, int level)
+{
+    const char *io_paths[] = {
+        "/digital_ios/dout1/value",
+        "/digital_ios/dout2/value",
+        "/digital_ios/dout3/value",
+        "/digital_ios/dout4/value",
+    };
+    char buf[64];
+    int n;
+
+    int fd = open(io_paths[io], O_RDWR);
+
+    if (fd < 0)
+        return;
+
+    sprintf(buf, "%d", level);
+    n = write(fd, buf, sizeof(buf));
+    close(fd);
+
+    dio_status[io] = level;
+    _emitDigitalIOStatusChanged(io);
+}
+
+void BackEnd::dio1StatusSet(QString status)
+{
+       dioStatusSet(0, status.toInt());
+}
+
+void BackEnd::dio2StatusSet(QString status)
+{
+       dioStatusSet(1, status.toInt());
+}
+
+void BackEnd::dio3StatusSet(QString status)
+{
+       dioStatusSet(2, status.toInt());
+}
+
+void BackEnd::dio4StatusSet(QString status)
+{
+       dioStatusSet(3, status.toInt());
 }
 
 QString BackEnd::dio2StatusGet()

@@ -18,10 +18,10 @@ class BackEnd : public QObject
     Q_PROPERTY(QString eeprom1Status READ eeprom1StatusGet NOTIFY eeprom1StatusChanged)
     Q_PROPERTY(QString eeprom2Status READ eeprom2StatusGet NOTIFY eeprom2StatusChanged)
 
-    Q_PROPERTY(QString dio1Status READ dio1StatusGet NOTIFY dio1StatusChanged)
-    Q_PROPERTY(QString dio2Status READ dio2StatusGet NOTIFY dio2StatusChanged)
-    Q_PROPERTY(QString dio3Status READ dio3StatusGet NOTIFY dio3StatusChanged)
-    Q_PROPERTY(QString dio4Status READ dio4StatusGet NOTIFY dio4StatusChanged)
+    Q_PROPERTY(QString dio1Status READ dio1StatusGet WRITE dio1StatusSet NOTIFY dio1StatusChanged)
+    Q_PROPERTY(QString dio2Status READ dio2StatusGet WRITE dio2StatusSet NOTIFY dio2StatusChanged)
+    Q_PROPERTY(QString dio3Status READ dio3StatusGet WRITE dio3StatusSet NOTIFY dio3StatusChanged)
+    Q_PROPERTY(QString dio4Status READ dio4StatusGet WRITE dio4StatusSet NOTIFY dio4StatusChanged)
 
     Q_PROPERTY(QString aout1Status READ aout1StatusGet NOTIFY aout1StatusChanged)
     Q_PROPERTY(QString aout2Status READ aout2StatusGet NOTIFY aout2StatusChanged)
@@ -51,6 +51,12 @@ public:
     QString dio3StatusGet();
     QString dio4StatusGet();
 
+    void dio1StatusSet(QString status);
+    void dio2StatusSet(QString status);
+    void dio3StatusSet(QString status);
+    void dio4StatusSet(QString status);
+    void dioStatusSet(int io, int level);
+
     QString aout1StatusGet();
     QString aout2StatusGet();
 
@@ -62,6 +68,8 @@ public:
     void * runDiagLoop(void *);
     void * runRs485Loop(void *);
     uint16_t regs[16];
+
+
 
 signals:
     void modbusStatusChanged();

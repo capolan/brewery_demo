@@ -93,12 +93,24 @@ Window {
             device: "DIO3 (OUT)"
             status: backend.dio3Status
             onStatusChanged: { color = "blue"}
+            onClicked: {
+                if (backend.dio3Status == "1")
+                    backend.dio3Status = "0";
+                else
+                    backend.dio3Status = "1";
+            }
         }
 
         HwStatus {
             device: "DIO4 (OUT)"
             status: backend.dio4Status
             onStatusChanged: { color = "blue"}
+            onClicked: {
+                if (backend.dio4Status == "1")
+                    backend.dio4Status = "0";
+                else
+                    backend.dio4Status = "1";
+            }
         }
 
         HwStatus {
